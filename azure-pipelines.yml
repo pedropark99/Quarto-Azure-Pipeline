@@ -1,0 +1,30 @@
+trigger:
+  branches:
+    include:
+    - main
+
+variables:
+  skipDecorator: true
+
+pool:
+  vmImage: ubuntu-latest
+
+
+jobs:
+  - job: BuildDocumentation
+    steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '3.x'
+        addToPath: true
+    - checkout: self
+      submodules: true
+    - bash: "curl -s https://api.github.com/repos/quarto-dev/quarto-cli/releases/latest | grep \"browser_download_url.*deb\" | cut -d : -f 2,3 | head -n 1 | xargs -I {} wget -O quarto-app.deb {}"
+    - bash: "sudo dpkg -i quarto-app.deb"
+    - bash: "quarto render"
+    - script: ls '$(System.DefaultWorkingDirectory)'
+    - task: AzureStaticWebApp@0
+      inputs:
+        app_location: '/_site'
+        skip_app_build: true
+        azure_static_web_apps_api_token: 'your azure personal acess token....'
